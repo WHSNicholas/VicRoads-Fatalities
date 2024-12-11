@@ -2,7 +2,6 @@
 #                                           VicRoads Motor Fatalities Model                                            #
 #                                              Exploratory Data Analysis                                               #
 # -------------------------------------------------------------------------------------------------------------------- #
-
 """
 Title: VicRoads Motor Fatalities Model
 Script: Exploratory Data Analysis
@@ -17,7 +16,7 @@ Purpose: This script explores the relationship between road fatalities and drive
 
 Dependencies: pandas
 
-Instructions:
+Instructions: Ensure that the working directory is set to VicRoads-Fatalities
 
 Data Sources: VicRoad Data obtained from https://discover.data.vic.gov.au/dataset/victoria-road-crash-data
 - Accident Data
@@ -45,37 +44,47 @@ Table of Contents:
   4.2. Dimension Reduction
 """
 
-# region 1. Data Integration -------------------------------------------------------------------------------------------
-# region 1.1. Preamble -------------------------------------------------------------------------------------------------
+# 1. Data Integration --------------------------------------------------------------------------------------------------
+# 1.1. Preamble --------------------------------------------------------------------------------------------------------
 # Required Packages
 import pandas as pd
 
-# endregion
 
-# region 1.2. Importing Data -------------------------------------------------------------------------------------------
-accident = pd.read_csv("../Data/accident.csv")
+# 1.2. Importing Data --------------------------------------------------------------------------------------------------
+# Importing csv Data
+accident = pd.read_csv("Data/accident.csv")
+vehicle = pd.read_csv("Data/vehicle.csv")
+accident_event = pd.read_csv("Data/accident_event.csv")
+atmospheric_cond = pd.read_csv("Data/atmospheric_cond.csv")
+sub_dca = pd.read_csv("Data/sub_dca.csv")
+person = pd.read_csv("Data/person.csv")
+node = pd.read_csv("Data/node.csv")
+road_surface_cond = pd.read_csv("Data/road_surface_cond.csv")
+accident_location = pd.read_csv("Data/accident_location.csv")
 
-# endregion
 
 
-# region 2. Data Cleaning ----------------------------------------------------------------------------------------------
-# region 2.1. Structuring Data -----------------------------------------------------------------------------------------
-# endregion
+# 2. Data Cleaning -----------------------------------------------------------------------------------------------------
+# 2.1. Structuring Data ------------------------------------------------------------------------------------------------
 
-# region 2.2. NA Cleaning ----------------------------------------------------------------------------------------------
-# endregion
-# endregion
 
-# region 3. Data Exploration -------------------------------------------------------------------------------------------
-# endregion
+# 2.2. NA Cleaning -----------------------------------------------------------------------------------------------------
 
-# region 4. Data Transformation ----------------------------------------------------------------------------------------
-# region 4.1. Transformation -------------------------------------------------------------------------------------------
-# endregion
 
-# region 4.2. Dimension Reduction --------------------------------------------------------------------------------------
-# endregion
-# endregion
+
+
+# 3. Data Exploration --------------------------------------------------------------------------------------------------
+
+
+
+# 4. Data Transformation -----------------------------------------------------------------------------------------------
+# 4.1. Transformation --------------------------------------------------------------------------------------------------
+
+
+# 4.2. Dimension Reduction ---------------------------------------------------------------------------------------------
+
+
+
 
 
 # -------------------------------------------------------------------------------------------------------------------- #
