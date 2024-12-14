@@ -44,44 +44,61 @@ Table of Contents:
   4.2. Dimension Reduction
 """
 
-# 1. Data Integration --------------------------------------------------------------------------------------------------
-# 1.1. Preamble --------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# 1. Data Integration
+# ----------------------------------------------------------------------------------------------------------------------
+
+# 1.1. Preamble ----------------------------------------------------------------------------------------------
 # Required Packages
 import pandas as pd
 
-# 1.2. Importing Data --------------------------------------------------------------------------------------------------
-# Importing Data
-accident = pd.read_csv("Data/accident.csv")
-vehicle = pd.read_csv("Data/vehicle.csv")
-accident_event = pd.read_csv("Data/accident_event.csv")
-atmospheric_cond = pd.read_csv("Data/atmospheric_cond.csv")
-sub_dca = pd.read_csv("Data/sub_dca.csv")
-person = pd.read_csv("Data/person.csv")
-node = pd.read_csv("Data/node.csv")
-road_surface_cond = pd.read_csv("Data/road_surface_cond.csv")
-accident_location = pd.read_csv("Data/accident_location.csv")
+# 1.2. Importing CSV Data ------------------------------------------------------------------------------------
+accident            = pd.read_csv("Data/accident.csv")
+vehicle             = pd.read_csv("Data/vehicle.csv")
+accident_event      = pd.read_csv("Data/accident_event.csv")
+atmospheric_cond    = pd.read_csv("Data/atmospheric_cond.csv")
+sub_dca             = pd.read_csv("Data/sub_dca.csv")
+person              = pd.read_csv("Data/person.csv")
+node                = pd.read_csv("Data/node.csv")
+road_surface_cond   = pd.read_csv("Data/road_surface_cond.csv")
+accident_location   = pd.read_csv("Data/accident_location.csv")
 
-dataframes = [
-    accident,
-    vehicle,
-    accident_event,
-    atmospheric_cond,
-    sub_dca,
-    person,
-    node,
-    road_surface_cond,
-    accident_location
-]
+dataframes = {
+    'accident': accident,
+    'vehicle': vehicle,
+    'accident_event': accident_event,
+    'atmospheric_cond': atmospheric_cond,
+    'sub_dca': sub_dca,
+    'person': person,
+    'node': node,
+    'road_surface_cond': road_surface_cond,
+    'accident_location': accident_location
+}
 
 
-# 2. Data Cleaning -----------------------------------------------------------------------------------------------------
-# 2.1. Renaming Columns ------------------------------------------------------------------------------------------------
-def snake_case(df):
-    df.columns = df.columns.str.lower().str.replace(' ', '_')
+# ----------------------------------------------------------------------------------------------------------------------
+# 2. Data Cleaning
+# ----------------------------------------------------------------------------------------------------------------------
 
-def rename(df):
-    df.rename(
-    columns={
+# 2.1. Cleaning Columns --------------------------------------------------------------------------------------
+# Renaming column names
+def snake_case(dataframe):
+    """
+    Convert all column names to snake_case.
+    """
+    dataframe.columns = (
+        dataframe.columns
+        .str.lower()
+        .str.strip()
+        .str.replace(' ', '_')
+        .str.replace('-', '_')
+    )
+
+def rename_columns(dataframe):
+    """
+    Rename some commonly known columns if they exist.
+    """
+    rename_dict = {
         'accident_no': 'accident_id',
         'no_of_vehicles': 'vehicles',
         'no_persons_killed': 'persons_killed',
@@ -103,203 +120,141 @@ def rename(df):
         'road_route_1': 'road_route',
         'road_type_int': 'road_type_intersection',
         'road_name_int': 'road_name_intersection'
-    },
-    inplace=True
-)
+    }
 
-for df in dataframes:
+    for old_col, new_col in rename_dict.items():
+        if old_col in dataframe.columns:
+            dataframe.rename(columns={old_col: new_col}, inplace=True)
+
+for df in dataframes.values():
     snake_case(df)
-    rename(df)
+    rename_columns(df)
 
+del [accident, vehicle, accident_event, atmospheric_cond, sub_dca, person, node, road_surface_cond, accident_location]
+del df
 
-
-# 2.2. Dropping Columns ------------------------------------------------------------------------------------------------
-accident.drop(
+# Dropping columns
+dataframes['accident'].drop(
     labels=['accident_type_desc', 'day_week_desc', 'dca_desc', 'no_persons_not_inj', 'road_geometry_desc'],
-    axis = 1,
+    axis=1,
     inplace=True
 )
 
-vehicle.drop(
+dataframes['vehicle'].drop(
     labels=['road_surface_type_desc', 'vehicle_power', 'vehicle_type_desc', 'vehicle_colour_1', 'vehicle_colour_2',
             'traffic_control_desc'],
-    axis = 1,
+    axis=1,
     inplace=True
 )
 
-accident_event.drop(
+dataframes['accident_event'].drop(
     labels=['event_type_desc', 'vehicle_1_coll_pt_desc', 'vehicle_2_coll_pt_desc', 'person_id', 'object_type_desc'],
-    axis = 1,
+    axis=1,
     inplace=True
 )
 
-atmospheric_cond.drop(
+dataframes['atmospheric_cond'].drop(
     labels=['atmosph_cond_seq', 'atmosph_cond_desc'],
-    axis = 1,
+    axis=1,
     inplace=True
 )
 
-sub_dca.drop(
+dataframes['sub_dca'].drop(
     labels=['sub_dca_code_desc', 'sub_dca_seq'],
-    axis = 1,
+    axis=1,
     inplace=True
 )
 
-person.drop(
+dataframes['person'].drop(
     labels=['inj_level_desc', 'road_user_type_desc'],
-    axis = 1,
+    axis=1,
     inplace=True
 )
 
-road_surface_cond.drop(
+dataframes['road_surface_cond'].drop(
     labels=['surface_cond_desc', 'surface_cond_seq'],
-    axis = 1,
+    axis=1,
     inplace=True
 )
 
 
-
-
-# 2.3. Data Formatting ------------------------------------------------------------------------------------------------
-# Creating the modelling dataframe
+# 2.2. Data Formatting ---------------------------------------------------------------------------------------
+# Creating merged dataframe
 vicroad_df = pd.DataFrame(
     {
-        'id': vehicle.accident_id + '-' + vehicle.vehicle_id,
-        'accident_id': vehicle.accident_id,
-        'vehicle_id': vehicle.vehicle_id
+        'id': dataframes['vehicle']['accident_id'].astype(str) + '-' + dataframes['vehicle']['vehicle_id'].astype(str),
+        'accident_id': dataframes['vehicle']['accident_id'],
+        'vehicle_id': dataframes['vehicle']['vehicle_id']
     }
 )
 
-# One-hot Encoding
-event_dummies = pd.get_dummies(
-    accident_event[['accident_id', 'event_type', 'vehicle_1_coll_pt', 'vehicle_2_coll_pt']],
-    columns=['event_type', 'vehicle_1_coll_pt', 'vehicle_2_coll_pt'],
-    prefix=['event_type', 'vehicle_1_coll_pt', 'vehicle_2_coll_pt']
-).groupby('accident_id').max().reset_index()
-
-atmospheric_dummies = pd.get_dummies(
-    atmospheric_cond,
-    columns=['atmosph_cond'],
-    prefix=['atmosph_cond']
-).groupby('accident_id').max().reset_index()
-
-sub_dca_dummies = pd.get_dummies(
-    sub_dca,
-    columns=['sub_dca_code'],
-    prefix=['sub_dca_code']
-).groupby('accident_id').max().reset_index()
-
-road_surf_cond_dummies = pd.get_dummies(
-    road_surface_cond,
-    columns=['surface_cond'],
-    prefix=['surface_cond']
-).groupby('accident_id').max().reset_index()
-
-# Merge with accident
-vicroad_df = pd.merge(
-    vicroad_df,
-    accident,
-    on='accident_id',
-    how='left'
+# One-Hot Encoding
+event_dummies = (
+    pd.get_dummies(
+        dataframes['accident_event'][['accident_id', 'event_type', 'vehicle_1_coll_pt', 'vehicle_2_coll_pt']],
+        columns=['event_type', 'vehicle_1_coll_pt', 'vehicle_2_coll_pt'],
+        prefix=['event_type', 'vehicle_1_coll_pt', 'vehicle_2_coll_pt']
+    )
+    .groupby('accident_id').max().reset_index()
 )
 
-# Merge with vehicle
-vicroad_df = pd.merge(
-    vicroad_df,
-    vehicle,
-    on=['accident_id', 'vehicle_id'],
-    how='left'
+atmospheric_dummies = (
+    pd.get_dummies(dataframes['atmospheric_cond'], columns=['atmosph_cond'], prefix=['atmosph_cond'])
+    .groupby('accident_id').max().reset_index()
 )
 
-accident_event.vehicle_2_coll_pt.unique()
-
-# Merge with accident_event
-vicroad_df = pd.merge(
-    vicroad_df,
-    event_dummies,
-    on='accident_id',
-    how='left'
+sub_dca_dummies = (
+    pd.get_dummies(dataframes['sub_dca'], columns=['sub_dca_code'], prefix=['sub_dca_code'])
+    .groupby('accident_id').max().reset_index()
 )
 
-# Merge with atmospheric_cond
-vicroad_df = pd.merge(
-    vicroad_df,
-    atmospheric_dummies,
-    on='accident_id',
-    how='left'
+road_surf_cond_dummies = (
+    pd.get_dummies(dataframes['road_surface_cond'], columns=['surface_cond'], prefix=['surface_cond'])
+    .groupby('accident_id').max().reset_index()
 )
 
+person_driver = dataframes['person'][dataframes['person']['seating_position'] == 'D']
+person_driver = person_driver[~person_driver.duplicated(subset=['accident_id', 'vehicle_id'], keep=False)]
 
-# Merge with sub_dca
-vicroad_df = pd.merge(
-    vicroad_df,
-    sub_dca_dummies,
-    on='accident_id',
-    how='left'
+node_unique = (
+    dataframes['node']
+    .drop('accident_id', axis=1, errors='ignore')
+    .groupby('node', as_index=False)
+    .agg(lambda x: x.iloc[0])
 )
 
-# Merge with person
-person_driver = person[person.seating_position == 'D']
-
-vicroad_df = pd.merge(
-    vicroad_df,
-    person_driver[~person_driver.duplicated(subset=['accident_id', 'vehicle_id'], keep=False)],
-    on=['accident_id', 'vehicle_id'],
-    how='left'
+# 2.4. Structuring Data --------------------------------------------------------------------------------------
+vicroad_df = (
+    vicroad_df
+    .merge(dataframes['accident'], on='accident_id', how='left')
+    .merge(dataframes['vehicle'], on=['accident_id','vehicle_id'], how='left')
+    .merge(event_dummies, on='accident_id', how='left')
+    .merge(atmospheric_dummies, on='accident_id', how='left')
+    .merge(sub_dca_dummies, on='accident_id', how='left')
+    .merge(person_driver, on=['accident_id','vehicle_id'], how='left')
+    .merge(node_unique, on='node', how='left')
+    .merge(road_surf_cond_dummies, on='accident_id', how='left')
+    .merge(dataframes['accident_location'].drop('node', axis=1, errors='ignore'), on='accident_id', how='left')
 )
 
-
-# Merge with node
-node_unique = node.drop('accident_id', axis = 1).groupby('node', as_index=False).agg(lambda x: x.iloc[0])
-
-vicroad_df = pd.merge(
-    vicroad_df,
-    node_unique,
-    on=['node'],
-    how='left'
-)
+del [event_dummies, atmospheric_dummies, sub_dca_dummies, road_surf_cond_dummies, person_driver, node_unique]
 
 
-# Merge with road_surface_cond
-vicroad_df = pd.merge(
-    vicroad_df,
-    road_surf_cond_dummies,
-    on=['accident_id'],
-    how='left'
-)
-
-# Merge with road_surface_cond
-vicroad_df = pd.merge(
-    vicroad_df,
-    accident_location.drop(['node'], axis=1),
-    on=['accident_id'],
-    how='left'
-)
+# 2.5. NA Cleaning -------------------------------------------------------------------------------------------
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+# 3. Data Exploration
+# ----------------------------------------------------------------------------------------------------------------------
 
-# 2.4. Structuring Data ------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# 4. Data Transformation
+# ----------------------------------------------------------------------------------------------------------------------
 
-
-
-
-
-# 2.5. NA Cleaning -----------------------------------------------------------------------------------------------------
-
-
-
-
-# 3. Data Exploration --------------------------------------------------------------------------------------------------
+# 4.1. Transformation ----------------------------------------------------------------------------------------
 
 
-
-# 4. Data Transformation -----------------------------------------------------------------------------------------------
-# 4.1. Transformation --------------------------------------------------------------------------------------------------
-
-
-# 4.2. Dimension Reduction ---------------------------------------------------------------------------------------------
-
-
+# 4.2. Dimension Reduction -----------------------------------------------------------------------------------
 
 
 
