@@ -63,11 +63,7 @@ from sklearn.metrics import (
     root_mean_squared_error,
     r2_score
 )
-from scipy.stats import uniform, randint
-from skopt import BayesSearchCV
-from skopt.space import Real, Categorical, Integer
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 
 
 # Settings
@@ -1316,7 +1312,7 @@ vicroad_x_train.fuel.unique()
 
 
 # 4.2. Dimension Reduction -----------------------------------------------------------------------------------
-# TEST
+
 # -------------------------------------------------------------------------------------------------------------------- #
 #                                           VicRoads Motor Fatalities Model                                            #
 #                                              Exploratory Data Analysis                                               #
