@@ -1,0 +1,15 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# Exclude large data files
+Data/Cleaned\ Data/vicroad_x_train.csv
+Data/Cleaned\ Data/vicroad_x_val.csv
+Data/Cleaned\ Data/vicroad_x_test.csv
+Data/Cleaned\ Data/vicroad_y_train.csv
+Data/Cleaned\ Data/vicroad_y_val.csv
+Data/Cleaned\ Data/vicroad_y_test.csv
