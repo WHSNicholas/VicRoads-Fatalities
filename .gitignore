@@ -13,3 +13,5 @@ Data/Cleaned\ Data/vicroad_x_test.csv
 Data/Cleaned\ Data/vicroad_y_train.csv
 Data/Cleaned\ Data/vicroad_y_val.csv
 Data/Cleaned\ Data/vicroad_y_test.csv
+# PyCharm project settings
+.idea/
