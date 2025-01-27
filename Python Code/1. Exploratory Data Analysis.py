@@ -54,17 +54,23 @@ import pandas as pd
 import numpy as np
 import xgboost as xgb
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    root_mean_squared_error,
-    r2_score
-)
-
-
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.decomposition import PCA, IncrementalPCA
+from sklearn.cluster import KMeans
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, root_mean_squared_error, r2_score
+from sklearn.feature_selection import RFE
+from skopt import BayesSearchCV
+from skopt.space import Real, Categorical, Integer
+import matplotlib.pyplot as plt
+import seaborn as sns
+import holidays
+from geopy.distance import geodesic
+from imblearn.over_sampling import SMOTE, BorderlineSMOTE, ADASYN, SVMSMOTE
+from imblearn.combine import SMOTEENN, SMOTETomek
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.optimizers import Adam
 
 # Settings
 pd.set_option('display.max_rows', None)
@@ -95,7 +101,7 @@ dataframes = {
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# 2. Data Cleaning
+# 2. Data Preprocessing
 # ----------------------------------------------------------------------------------------------------------------------
 
 # 2.1. Cleaning Columns --------------------------------------------------------------------------------------
@@ -242,23 +248,39 @@ event_dummies = (
     pd.get_dummies(
         dataframes['accident_event'][['accident_id', 'event_type', 'veh_1_coll', 'veh_2_coll']],
         columns=['event_type', 'veh_1_coll', 'veh_2_coll'],
-        prefix=['event_type', 'veh_1_coll', 'veh_2_coll']
+        prefix=['event_type', 'veh_1_coll', 'veh_2_coll'],
+        drop_first=True
     )
     .groupby('accident_id').max().reset_index()
 )
 
 atmospheric_dummies = (
-    pd.get_dummies(dataframes['atmospheric_cond'], columns=['atmosph_cond'], prefix=['atmosph_cond'])
+    pd.get_dummies(
+        dataframes['atmospheric_cond'],
+        columns=['atmosph_cond'],
+        prefix=['atmosph_cond'],
+        drop_first=True
+    )
     .groupby('accident_id').max().reset_index()
 )
 
 sub_dca_dummies = (
-    pd.get_dummies(dataframes['sub_dca'], columns=['sub_dca_code'], prefix=['sub_dca_code'])
+    pd.get_dummies(
+        dataframes['sub_dca'],
+        columns=['sub_dca_code'],
+        prefix=['sub_dca_code'],
+        drop_first=True
+    )
     .groupby('accident_id').max().reset_index()
 )
 
 road_surf_cond_dummies = (
-    pd.get_dummies(dataframes['road_surface_cond'], columns=['surface_cond'], prefix=['surface_cond'])
+    pd.get_dummies(
+        dataframes['road_surface_cond'],
+        columns=['surface_cond'],
+        prefix=['surface_cond'],
+        drop_first=True
+    )
     .groupby('accident_id').max().reset_index()
 )
 
@@ -300,6 +322,7 @@ vicroad_df.drop(
     inplace=True)
 
 del [event_dummies, atmospheric_dummies, sub_dca_dummies, road_surf_cond_dummies, person_driver, node_unique]
+
 
 # Converting Strings to Category
 category = [
@@ -553,8 +576,6 @@ vicroad_df['accident_time'] = pd.to_datetime(vicroad_df['accident_time'], format
 # Converting Columns to Int
 integer = ['vehicle_year', 'wheels', 'cylinders', 'seating_capacity', 'tare_weight', 'occupants']
 vicroad_df[integer] = vicroad_df[integer].astype('Int64')
-
-del [boolean, category, integer]
 
 # Splitting the Data
 vicroad_x_train, vicroad_x_test, vicroad_y_train, vicroad_y_test = train_test_split(
@@ -1261,31 +1282,19 @@ def clean_nans(df):
 
 # Training Data
 vicroad_x_train = filter_rows(vicroad_x_train)
-vicroad_y_train = vicroad_y_train.loc[vicroad_x_train.index]
-
 vicroad_x_train = clean_outliers(vicroad_x_train)
-vicroad_y_train = vicroad_y_train.loc[vicroad_x_train.index]
-
 vicroad_x_train = clean_nans(vicroad_x_train)
 vicroad_y_train = vicroad_y_train.loc[vicroad_x_train.index]
 
 # Validation Data
 vicroad_x_val = filter_rows(vicroad_x_val)
-vicroad_y_val = vicroad_y_val.loc[vicroad_x_val.index]
-
 vicroad_x_val = clean_outliers(vicroad_x_val)
-vicroad_y_val = vicroad_y_val.loc[vicroad_x_val.index]
-
 vicroad_x_val = clean_nans(vicroad_x_val)
 vicroad_y_val = vicroad_y_val.loc[vicroad_x_val.index]
 
 # Test Data
 vicroad_x_test = filter_rows(vicroad_x_test)
-vicroad_y_test = vicroad_y_test.loc[vicroad_x_test.index]
-
 vicroad_x_test = clean_outliers(vicroad_x_test)
-vicroad_y_test = vicroad_y_test.loc[vicroad_x_test.index]
-
 vicroad_x_test = clean_nans(vicroad_x_test)
 vicroad_y_test = vicroad_y_test.loc[vicroad_x_test.index]
 
@@ -1298,20 +1307,540 @@ vicroad_y_train.to_csv('Data/Cleaned Data/vicroad_y_train.csv', index=False)
 vicroad_y_val.to_csv('Data/Cleaned Data/vicroad_y_val.csv', index=False)
 vicroad_y_test.to_csv('Data/Cleaned Data/vicroad_y_test.csv', index=False)
 
-vicroad_x_train.fuel.unique()
+dataframes['vicroad_x_train'] = vicroad_x_train
+dataframes['vicroad_x_val'] = vicroad_x_val
+dataframes['vicroad_x_test'] = vicroad_x_test
+dataframes['vicroad_y_train'] = vicroad_y_train
+dataframes['vicroad_y_val'] = vicroad_y_val
+dataframes['vicroad_y_test'] = vicroad_y_test
+dataframes['vicroad_df'] = vicroad_df
+
+del [vicroad_x_train, vicroad_x_val, vicroad_x_test, vicroad_y_train, vicroad_y_val, vicroad_y_test, vicroad_df]
+
+# 2.5. Data Preparation ----------------------------------------------------------------------------------------
+x_train = dataframes['vicroad_x_train'].drop(
+    [
+        'id', 'node', 'persons_inj_a', 'persons_inj_b', 'severity', 'vehicle_dca_code', 'inj_level', 'taken_hospital',
+        'lga_name_all', 'road_name', 'road_name_intersection', 'vehicle_model', 'postcode_crash', 'road_route'
+    ],
+    axis = 1)
+
+x_val = dataframes['vicroad_x_val'].drop(
+    [
+        'id', 'node', 'persons_inj_a', 'persons_inj_b', 'severity', 'vehicle_dca_code', 'inj_level', 'taken_hospital',
+        'lga_name_all', 'road_name', 'road_name_intersection', 'vehicle_model', 'postcode_crash', 'road_route'
+    ],
+    axis = 1)
+
+x_test = dataframes['vicroad_x_test'].drop(
+    [
+        'id', 'node', 'persons_inj_a', 'persons_inj_b', 'severity', 'vehicle_dca_code', 'inj_level', 'taken_hospital',
+        'lga_name_all', 'road_name', 'road_name_intersection', 'vehicle_model', 'postcode_crash', 'road_route'
+    ],
+    axis = 1)
+
+y_train = dataframes['vicroad_y_train'].to_frame()
+y_train['fatal'] = np.where(y_train['persons_killed'] > 0, 1, 0)
+y_train = y_train.drop('persons_killed', axis=1)
+
+y_val = dataframes['vicroad_y_val'].to_frame()
+y_val['fatal'] = np.where(y_val['persons_killed'] > 0, 1, 0)
+y_val = y_val.drop('persons_killed', axis=1)
+
+y_test = dataframes['vicroad_y_test'].to_frame()
+y_test['fatal'] = np.where(y_test['persons_killed'] > 0, 1, 0)
+y_test = y_test.drop('persons_killed', axis=1)
+
+# 2.6. Data Encoding -------------------------------------------------------------------------------------------
+x_train = pd.get_dummies(
+    x_train,
+    columns=['accident_type', 'day', 'dca_code', 'light_condition', 'road_geometry', 'rma', 'initial_direction',
+             'road_surface', 'registration_state', 'vehicle_body_style', 'vehicle_make',
+             'vehicle_type', 'fuel', 'final_direction', 'driver_intent', 'vehicle_movement', 'trailer_type',
+             'initial_impact', 'level_of_damage', 'traffic_control', 'sex', 'age_group', 'helmet_belt_worn',
+             'road_user', 'license_state', 'node_type', 'lga_name', 'deg_urban_name',
+             'road_type', 'road_type_intersection', 'direction_location'],
+    prefix=['accident_type', 'day', 'dca_code', 'light_condition', 'road_geometry', 'rma', 'initial_direction',
+             'road_surface', 'registration_state', 'vehicle_body_style', 'vehicle_make',
+             'vehicle_type', 'fuel', 'final_direction', 'driver_intent', 'vehicle_movement', 'trailer_type',
+             'initial_impact', 'level_of_damage', 'traffic_control', 'sex', 'age_group', 'helmet_belt_worn',
+             'road_user', 'license_state', 'node_type', 'lga_name', 'deg_urban_name',
+             'road_type', 'road_type_intersection', 'direction_location'],
+    drop_first=True
+)
+
+x_val = pd.get_dummies(
+    x_val,
+    columns=['accident_type', 'day', 'dca_code', 'light_condition', 'road_geometry', 'rma', 'initial_direction',
+             'road_surface', 'registration_state', 'vehicle_body_style', 'vehicle_make',
+             'vehicle_type', 'fuel', 'final_direction', 'driver_intent', 'vehicle_movement', 'trailer_type',
+             'initial_impact', 'level_of_damage', 'traffic_control', 'sex', 'age_group', 'helmet_belt_worn',
+             'road_user', 'license_state', 'node_type', 'lga_name', 'deg_urban_name',
+             'road_type', 'road_type_intersection', 'direction_location'],
+    prefix=['accident_type', 'day', 'dca_code', 'light_condition', 'road_geometry', 'rma', 'initial_direction',
+             'road_surface', 'registration_state', 'vehicle_body_style', 'vehicle_make',
+             'vehicle_type', 'fuel', 'final_direction', 'driver_intent', 'vehicle_movement', 'trailer_type',
+             'initial_impact', 'level_of_damage', 'traffic_control', 'sex', 'age_group', 'helmet_belt_worn',
+             'road_user', 'license_state', 'node_type', 'lga_name', 'deg_urban_name',
+             'road_type', 'road_type_intersection', 'direction_location'],
+    drop_first=True
+)
+
+x_test = pd.get_dummies(
+    x_test,
+    columns=['accident_type', 'day', 'dca_code', 'light_condition', 'road_geometry', 'rma', 'initial_direction',
+             'road_surface', 'registration_state', 'vehicle_body_style', 'vehicle_make',
+             'vehicle_type', 'fuel', 'final_direction', 'driver_intent', 'vehicle_movement', 'trailer_type',
+             'initial_impact', 'level_of_damage', 'traffic_control', 'sex', 'age_group', 'helmet_belt_worn',
+             'road_user', 'license_state', 'node_type', 'lga_name', 'deg_urban_name',
+             'road_type', 'road_type_intersection', 'direction_location'],
+    prefix=['accident_type', 'day', 'dca_code', 'light_condition', 'road_geometry', 'rma', 'initial_direction',
+             'road_surface', 'registration_state', 'vehicle_body_style', 'vehicle_make',
+             'vehicle_type', 'fuel', 'final_direction', 'driver_intent', 'vehicle_movement', 'trailer_type',
+             'initial_impact', 'level_of_damage', 'traffic_control', 'sex', 'age_group', 'helmet_belt_worn',
+             'road_user', 'license_state', 'node_type', 'lga_name', 'deg_urban_name',
+             'road_type', 'road_type_intersection', 'direction_location'],
+    drop_first=True
+)
+
+x_train.columns = x_train.columns.str.replace(' ', '_').str.lower()
+x_val.columns = x_val.columns.str.replace(' ', '_').str.lower()
+x_test.columns = x_test.columns.str.replace(' ', '_').str.lower()
+
+# Ensure Datasets have the same columns
+common_columns = x_train.columns.union(x_val.columns).union(x_test.columns)
+
+x_train = x_train.reindex(columns=common_columns, fill_value=0)
+x_val = x_val.reindex(columns=common_columns, fill_value=0)
+x_test = x_test.reindex(columns=common_columns, fill_value=0)
+
+del common_columns
+
 
 # ----------------------------------------------------------------------------------------------------------------------
-# 3. Data Exploration
+# 3. Data Transformation
 # ----------------------------------------------------------------------------------------------------------------------
 
+# 3.1. Feature Engineering -------------------------------------------------------------------------------------
+def feature_engineering(df):
+    # Accident Date
+    df['year'] = df['accident_date'].dt.year
+    df['month'] = df['accident_date'].dt.month
+    df['time (days)'] = (df['accident_date'] - df['accident_date'].min()).dt.days
+
+    # Holidays
+    years = df['accident_date'].dt.year.unique()
+    aus_holidays = pd.to_datetime(list(holidays.Australia(years=years).keys()))
+    vic_holidays = pd.to_datetime(list(holidays.Australia(years=years, prov='VIC').keys()))
+    holiday = set(aus_holidays).union(set(vic_holidays))
+    df['is_holiday'] = df['accident_date'].isin(holiday).astype(int)
+
+    df = df.drop(columns=['accident_date'], axis=1)
+
+    # Accident Time
+    df['accident_time'] = pd.to_datetime(df['accident_time'], format='%H:%M:%S').dt.time
+    df['accident_time'] = df['accident_time'].apply(
+        lambda t: t.hour + t.minute / 60.0 + t.second / 3600.0 if pd.notnull(t) else np.nan
+    )
+
+    # Vehicle
+    df['vehicle_age'] = df['year'] - df['vehicle_year']
+    df['engine_efficiency'] = df['cylinders'] / df['vehicle_age'].replace(0, 1)
+
+    # Geospatial
+    melbourne_cbd = (-37.8136, 144.9631)
+
+    def calculate_distance(row):
+        if pd.notnull(row['latitude']) and pd.notnull(row['longitude']):
+            return geodesic((row['latitude'], row['longitude']), melbourne_cbd).kilometers
+        else:
+            return np.nan
+
+    df['distance_to_cbd_km'] = df.apply(calculate_distance, axis=1)
+
+    # Cluster Label using K-Means
+    geospatial_data = df[['latitude', 'longitude']].dropna()
+    kmeans = KMeans(n_clusters=5, random_state=SEED)
+    df.loc[geospatial_data.index, 'geospatial_cluster'] = kmeans.fit_predict(geospatial_data)
+
+    return df
+
+x_train = feature_engineering(x_train)
+x_val = feature_engineering(x_val)
+x_test = feature_engineering(x_test)
+
+# cor = x_train.corr()
+
+
+# 3.2. Data Standardisation ------------------------------------------------------------------------------------
+scaler = StandardScaler()
+
+# Separate date and time columns
+x_train = pd.DataFrame(scaler.fit_transform(x_train), columns=x_train.columns, index=x_train.index)
+
+# Standardize validation and test data using the same scaler
+x_val = pd.DataFrame(scaler.transform(x_val), columns=x_val.columns, index=x_val.index)
+x_test = pd.DataFrame(scaler.transform(x_test), columns=x_test.columns, index=x_test.index)
+
+# 3.3. Dimension Reduction -------------------------------------------------------------------------------------
+category = [
+    'accident_type', 'day', 'dca_code', 'light_condition', 'road_geometry', 'severity', 'rma', 'vehicle_dca_code',
+    'initial_direction', 'road_surface', 'registration_state', 'vehicle_body_style', 'vehicle_make', 'vehicle_model',
+    'vehicle_type', 'fuel', 'final_direction', 'driver_intent', 'vehicle_movement', 'trailer_type', 'initial_impact',
+    'level_of_damage', 'traffic_control', 'sex', 'age_group', 'inj_level', 'helmet_belt_worn', 'road_user',
+    'license_state', 'node_type', 'lga_name', 'lga_name_all', 'deg_urban_name', 'road_route',
+    'road_name', 'road_type', 'road_name_intersection', 'road_type_intersection', 'direction_location', 'atmosph_cond',
+    'event_type', 'sub_dca_code', 'surface_cond', 'veh_1_coll', 'veh_2_coll'
+]
+
+pca_dict = {}  # To store PCA objects for reuse
+pca_components = []
+columns_to_drop = []
+
+# Perform PCA on training data
+for var in category:
+    relevant_columns = [col for col in x_train.columns if col.startswith(f'{var}_')]
+
+    if relevant_columns:
+        subset = x_train[relevant_columns]
+        columns_to_drop.extend(relevant_columns)
+
+        # Fit PCA
+        pca = PCA(n_components=0.75)
+        pca_result = pca.fit_transform(subset)
+
+        # Save PCA object for validation and test data
+        pca_dict[var] = pca
+
+        # Create DataFrame for PCA results
+        pca_df = pd.DataFrame(
+            pca_result,
+            columns=[f'{var}_pca_{i + 1}' for i in range(pca_result.shape[1])],
+            index=x_train.index
+        )
+        pca_components.append(pca_df)
+
+pca_components = pd.concat(pca_components, axis=1)
+x_train = pd.concat([x_train, pca_components], axis=1)
+x_train = x_train.drop(columns=columns_to_drop)
+
+# Perform PCA on validation data
+pca_components = []
+columns_to_drop = []
+
+for var, pca in pca_dict.items():
+    relevant_columns = [col for col in x_val.columns if col.startswith(f'{var}_')]
+
+    if relevant_columns:
+        subset = x_val[relevant_columns]
+        columns_to_drop.extend(relevant_columns)
+
+        # Transform using the same PCA fitted on training data
+        pca_result = pca.transform(subset)
+
+        # Create DataFrame for PCA results
+        pca_df = pd.DataFrame(
+            pca_result,
+            columns=[f'{var}_pca_{i + 1}' for i in range(pca_result.shape[1])],
+            index=x_val.index
+        )
+        pca_components.append(pca_df)
+
+pca_components = pd.concat(pca_components, axis=1)
+x_val = pd.concat([x_val, pca_components], axis=1)
+x_val = x_val.drop(columns=columns_to_drop)
+
+# Perform PCA on test data
+pca_components = []
+columns_to_drop = []
+
+for var, pca in pca_dict.items():
+    relevant_columns = [col for col in x_test.columns if col.startswith(f'{var}_')]
+
+    if relevant_columns:
+        subset = x_test[relevant_columns]
+        columns_to_drop.extend(relevant_columns)
+
+        # Transform using the same PCA fitted on training data
+        pca_result = pca.transform(subset)
+
+        # Create DataFrame for PCA results
+        pca_df = pd.DataFrame(
+            pca_result,
+            columns=[f'{var}_pca_{i + 1}' for i in range(pca_result.shape[1])],
+            index=x_test.index
+        )
+        pca_components.append(pca_df)
+
+pca_components = pd.concat(pca_components, axis=1)
+x_test = pd.concat([x_test, pca_components], axis=1)
+x_test = x_test.drop(columns=columns_to_drop)
+
+# Clean up variables
+del [var, pca_df, pca_result, pca_components, columns_to_drop, subset, relevant_columns]
+
+
+# 3.4. Feature Importance --------------------------------------------------------------------------------------
+# Initialize the model
+xgb_model = xgb.XGBClassifier(
+    objective='binary:logistic',
+    random_state=SEED,
+    n_jobs=-1,
+    verbosity=2,
+    eval_metric='auc',
+    colsample_bytree=0.5,
+    gamma=0.0,
+    learning_rate=0.07292699809069496,
+    max_depth=15,
+    n_estimators=280,
+    subsample=1.0
+)
+
+search_spaces = {
+    'n_estimators': Integer(50, 500),  # Number of boosting rounds
+    'max_depth': Integer(3, 40),  # Depth of each tree
+    'learning_rate': Real(0.01, 1.0, prior='log-uniform'),  # Step size shrinkage
+    'subsample': Real(0.5, 1.0),  # Fraction of samples for training
+    'colsample_bytree': Real(0.5, 1.0),  # Fraction of features per tree
+    'gamma': Real(0, 5),  # Minimum loss reduction
+}
+
+bayes_search = BayesSearchCV(
+    estimator=xgb_model,
+    search_spaces=search_spaces,
+    n_iter=50,
+    scoring='roc_auc',
+    cv=8,
+    random_state=SEED,
+    n_jobs=-1,
+    verbose=2
+)
+
+# bayes_search.fit(x_train, y_train)
+# print("Best Parameters found by BayesSearchCV:")
+# print(bayes_search.best_params_)
+
+# Retrieve best model
+# xgb_model = bayes_search.best_estimator_
+
+# Retrain the best model
+xgb_model.fit(
+    x_train, y_train,
+    eval_set=[(x_train, y_train), (x_val, y_val)],
+    verbose=False
+)
+
+pred = xgb_model.predict(x_val)
+y_val
+
+# Retrieve training history
+evals_result = xgb_model.evals_result()
+train_auc = evals_result['validation_0']['auc'][-1]
+val_auc= evals_result['validation_1']['auc'][-1]
+
+print("Training AUC:", train_auc)
+print("Validation AUC:", val_auc)
+
+# Get feature importance
+importance_xgb = xgb_model.feature_importances_
+
+# Create a DataFrame for visualization
+feat_importance = pd.DataFrame({
+    'feature': x_train.columns,
+    'importance': importance_xgb
+}).sort_values(by='importance', ascending=False)
+
+# Plot for XGBoost
+plt.figure(figsize=(6, 20))
+sns.barplot(x='importance', y='feature', data=feat_importance.head(100))
+plt.title('Top 100 Feature Importance (XGBoost)')
+plt.xlabel('Importance')
+plt.ylabel('Feature')
+plt.tight_layout()
+plt.show()
+
+# 3.5. Imbalanced Data -----------------------------------------------------------------------------------------
+sm = SMOTE(
+    random_state=SEED,
+    sampling_strategy='auto',
+    k_neighbors=5
+)
+
+x_train_sm, y_train_sm = sm.fit_resample(x_train, y_train)
+
+# Retrain the best model
+xgb_model.fit(
+    x_train_sm, y_train_sm,
+    eval_set=[(x_train_sm, y_train_sm), (x_val, y_val)],
+    verbose=False
+)
+
+pred = xgb_model.predict(x_val)
+
+# Retrieve training history
+evals_result = xgb_model.evals_result()
+train_auc = evals_result['validation_0']['auc'][-1]
+val_auc= evals_result['validation_1']['auc'][-1]
+
+print("Training AUC:", train_auc)
+print("Validation AUC:", val_auc)
+
 # ----------------------------------------------------------------------------------------------------------------------
-# 4. Data Transformation
+# 4. Machine Learning
 # ----------------------------------------------------------------------------------------------------------------------
+# 4.1. XGBoost (L1 Regularisation) -----------------------------------------------------------------------------
+# Initialize the model
+xgb_model = xgb.XGBClassifier(
+    objective='binary:logistic',
+    random_state=SEED,
+    n_jobs=-1,
+    verbosity=2,
+    eval_metric='auc',
+    colsample_bytree=0.5,
+    gamma=0.0,
+    learning_rate=0.07292699809069496,
+    max_depth=15,
+    n_estimators=280,
+    subsample=1.0,
+    alpha=5.325826766633403e-05
+)
 
-# 4.1. Transformation ----------------------------------------------------------------------------------------
+# Defining Search Space
+search_spaces = {
+    'alpha': Real(0, 1.0)
+}
+
+bayes_search = BayesSearchCV(
+    estimator=xgb_model,
+    search_spaces=search_spaces,
+    n_iter=20,
+    scoring='roc_auc',
+    cv=3,
+    random_state=SEED,
+    n_jobs=-1,
+    verbose=2
+)
+
+# bayes_search.fit(x_train_sm, y_train_sm)
+#
+# print("Best Parameters found by BayesSearchCV:")
+# print(bayes_search.best_params_)
+#
+# # Retrieve best model
+# xgb_model = bayes_search.best_estimator_
+
+# Retrain the best model
+xgb_model.fit(
+    x_train_sm, y_train_sm,
+    eval_set=[(x_train_sm, y_train_sm), (x_val, y_val)],
+    verbose=False
+)
+
+# Evaluation Metrics
+evals_result = xgb_model.evals_result()
+train_auc = evals_result['validation_0']['auc'][-1]
+val_auc= evals_result['validation_1']['auc'][-1]
+
+print("Training AUC:", train_auc)
+print("Validation AUC:", val_auc)
+
+# Feature Importance
+feature_importance = xgb_model.feature_importances_
+fi_df = pd.DataFrame({'Feature': x_train.columns, 'Importance': feature_importance})
+fi_df = fi_df.sort_values(by='Importance', ascending=False)
 
 
-# 4.2. Dimension Reduction -----------------------------------------------------------------------------------
+# Refitting with Selected Features
+top_features = fi_df.head(525)['Feature'].tolist()
+x_train_sel = x_train_sm[top_features]
+x_val_sel = x_val[top_features]
+x_test_sel = x_test[top_features]
+
+xgb_model.fit(
+    x_train_sel, y_train_sm,
+    eval_set=[(x_train_sel, y_train_sm), (x_val_sel, y_val)],
+    verbose=False
+)
+
+# Evaluation Metrics
+evals_result = xgb_model.evals_result()
+train_auc = evals_result['validation_0']['auc'][-1]
+val_auc= evals_result['validation_1']['auc'][-1]
+
+print("Training AUC:", train_auc)
+print("Validation AUC:", val_auc)
+
+# Feature Importance
+feature_importance = xgb_model.feature_importances_
+fi_df_2 = pd.DataFrame({'Feature': x_train_sel.columns, 'Importance': feature_importance})
+fi_df_2 = fi_df_2.sort_values(by='Importance', ascending=False)
+
+
+# 4.2. XGBoost (Recursive Feature Elimination) -----------------------------------------------------------------
+# Initialize RFE with desired number of features
+selector = RFE(
+    estimator=xgb_model,
+    n_features_to_select=600,
+    step=10,
+    verbose=2
+)
+
+# Fit RFE
+selector = selector.fit(x_train_sm, y_train_sm)
+
+selected_features = x_train_sm.columns[selector.support_].tolist()
+print("Selected Features:", selected_features)
+
+x_train_rfe = x_train_sm[selected_features]
+x_val_rfe = x_val[selected_features]
+x_test_rfe = x_test[selected_features]
+
+xgb_model.fit(
+    x_train_rfe, y_train_sm,
+    eval_set=[(x_train_rfe, y_train_sm), (x_val_rfe, y_val)],
+    verbose=False
+)
+
+# Evaluation Metrics
+evals_result = xgb_model.evals_result()
+train_auc = evals_result['validation_0']['auc'][-1]
+val_auc= evals_result['validation_1']['auc'][-1]
+
+print("Training AUC:", train_auc)
+print("Validation AUC:", val_auc)
+
+
+# 4.3. Neural Network ------------------------------------------------------------------------------------------
+model = Sequential([
+    Dense(256, activation='relu', input_shape=(x_train_sm.shape[1],)),
+    Dropout(0.3),
+    Dense(128, activation='relu'),
+    Dropout(0.3),
+    Dense(64, activation='relu'),
+    Dropout(0.3),
+    Dense(32, activation='relu'),
+    Dropout(0.3),
+    Dense(1, activation='sigmoid')
+])
+
+model.compile(
+    optimizer=Adam(learning_rate=0.001),
+    loss='binary_crossentropy',
+    metrics=['AUC']
+)
+
+history = model.fit(
+    x_train_sm, y_train_sm,
+    epochs=100,
+    batch_size=32,
+    validation_data=(x_test, y_test),
+    verbose=1
+)
+
+# Evaluate on Test Set
+val_loss, val_auc = model.evaluate(x_val, y_val, verbose=2)
+print(f"Validation Loss: {val_loss:.4f}")
+print(f"Validation AUC: {val_auc:.4f}")
 
 # -------------------------------------------------------------------------------------------------------------------- #
 #                                           VicRoads Motor Fatalities Model                                            #
