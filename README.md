@@ -57,13 +57,39 @@ From the data visualisation found in the Graphs section, we make the following o
 - If seatbelt or helmets are not worn, the accident is more likely to be fatal (42)
 - If the driver was ejected, the accident is more likely to be fatal (46)
 
-
-
 [View the interactive Plotly graph](https://whsnicholas.github.io/VicRoads-Fatalities/accident_date_agg_plotly.html)
 
 
 ## Machine Learning Methods
+Before we built any ML models, the data was preprocessed with the following steps. Firstly we one-hot encoded all categorical variables, some of which were very high dimensional, which we adressed later. Next some basic feature engineering was conducted: is_holiday (binary variable indicating whether the date was a public holiday), engine_efficiency (cylinders/age) and distance_to_cbd_km (distance to Melbourne CBD). We then scaled the data using the standard scaler. In order to address the high dimensionality of our data, we performed Principal Components Analysis for certain high dimensional columns in order to retain 76% of the variance. This reduced the number of columns in the data significantly. After checking using an initial xGBoost model the feature importance, we implemented Synthetic Minority Oversampling Techniques (SMOTE) in order to address the significant class imbalance. The data had only 1.5% of its cases having been fatal, with the remaining 98.5% being non-fatal accidents. This presents a problem when performing classification because if we 'built' a naive model that always predicted Not Fatal, we would be correct 98.5% of the time, providing an accuracy of 98.5% (another reason as to why accuracy is not a good metric). This looks good on paper but really our model has learnt absolutely nothing about predicting fatal accidents. Hence we need to address this issue firstly by considering metrics apart from accuracy, as well as by oversampling the minority class in our data so that we can learn from a more balanced dataset. We implemented SMOTE, ADASYN, BorderlineSMOTE and SMOTETomek, experimenting with different values for k_neighbours. We found that ADASYN performed best, improving our recall from 0.02 to 0.45. While not a perfect classifier, a significant improvement. This allowed for much improved model performance in both the xGBoost and Neural Network models.
+
+The xGBoost model was trained using the ADASYN oversampled data using a binary logistic objective function. The hyperparameters were tuned using the validation set and using Bayes Search. Due to the significant number of parameters, a grid search was computationally too expensive, and hence as opposed to random guessing, a Bayesian approach was taken, adapting the random parameters based on previous models' performance. L1 regularisation was also included for model robustness. The model was then evaluated usiing primarily the AUC and F1 metric, and we chose a threshold such that we maximise the F1 score. The model was then retrained on the training + validation sets and evaluated on the test data. The results are presented below
 
 
+
+
+Confusion Matrix for xGBoost Model: 
+
+| Actual \ Predicted | Fatal | Non Fatal |
+|--------------------|----------|----------|
+| Fatal     | TP =  | FN =  |
+| Non Fatal | FP =  | TN =  |
+
+
+The Neural Network architecture consisted of a Feed Forward Neural Network with 2 hidden layers, the first with 64 neurons, and the second with 16 neurons. We found that networks with fewer hidden layers and neurons were less prone to overfitting and hence performed better. We used a dropout rate of 40% again to circumvent overfitting and used the hyperbolic tangent activation function on both layers, which seemed to provide better results. The choice of optimiser was the Stochastic Gradient Descent, which significantly outperformed the Adam Optimiser, while sacrificing some computational efficienct. We found that lower learning rates generalised the networks better when combined with more epochs. Early stopping was used to prevent overfitting. The model results are presented below
+
+Confusion Matrix for Neural Network Model: 
+
+| Actual \ Predicted | Fatal | Non Fatal |
+|--------------------|----------|----------|
+| Fatal     | TP =  | FN =  |
+| Non Fatal | FP =  | TN =  |
+
+Our intuition as to why the xGBoost model outperformed the Neural Network is because neural networks better model continuous functions as shown by the Universal Approximation Theorem. Tree based methods are stepwise by design and hence seem to work well for classification of data which has a large amount of categorical data. The Neural Network represents the categorical data as continuous values which seem to give the xGBoost model an advantage. 
 
 ## Results and Recommendations
+Our xGBoost built performs well and is optimised for a balance of precision and recall, and uses state-of-the-art machine learning techniques, combined with an abundance of data to predict whether a given accident will be fatal or not. We gained new insights into driver and accident characteristics that might impact the severity and hence the fatality of motor accidents and suggest that data-driven policies and regulations for example regarding speeding and seat belts are implemented. Furthermore, our research demonstrates a capacity to learn from a significantly class imbalanced dataset using a combination of sound data cleaning techniques, as well as sound model evaluation and training methods. 
+
+
+
+
