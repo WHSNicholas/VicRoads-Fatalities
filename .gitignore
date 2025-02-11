@@ -15,3 +15,5 @@ Data/Cleaned\ Data/vicroad_y_val.csv
 Data/Cleaned\ Data/vicroad_y_test.csv
 # PyCharm project settings
 .idea/.DS_Store
+.DS_Store
+.idea/
