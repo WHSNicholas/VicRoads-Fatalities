@@ -65,16 +65,16 @@ Before we built any ML models, the data was preprocessed with the following step
 
 The xGBoost model was trained using the ADASYN oversampled data using a binary logistic objective function. The hyperparameters were tuned using the validation set and using Bayes Search. Due to the significant number of parameters, a grid search was computationally too expensive, and hence as opposed to random guessing, a Bayesian approach was taken, adapting the random parameters based on previous models' performance. L1 regularisation was also included for model robustness. The model was then evaluated usiing primarily the AUC and F1 metric, and we chose a threshold such that we maximise the F1 score. The model was then retrained on the training + validation sets and evaluated on the test data. The results are presented below
 
-**XGBoost Evaluation Results:**
-_Accuracy_: 0.98314263
-_Precision_: 0.46720214
-_Recall_: 0.50215827
-_F1 Score_: 0.48404993
-_AUC-ROC_: 0.96209680
-_Best threshold for F1_: 0.053136785
+**XGBoost Evaluation Results**:
+- _Accuracy_: 0.98314263
+- _Precision_: 0.46720214
+- _Recall_: 0.50215827
+- _F1 Score_: 0.48404993
+- _AUC-ROC_: 0.96209680
+- _Best threshold for F1_: 0.053136785
 
 
-**Confusion Matrix for xGBoost Model: **
+**Confusion Matrix for xGBoost Model**:
 
 | Actual \ Predicted | Non Fatal | Fatal |
 |--------------------|----------|----------|
@@ -85,12 +85,12 @@ _Best threshold for F1_: 0.053136785
 The Neural Network architecture consisted of a Feed Forward Neural Network with 2 hidden layers, the first with 64 neurons, and the second with 16 neurons. We found that networks with fewer hidden layers and neurons were less prone to overfitting and hence performed better. We used a dropout rate of 40% again to circumvent overfitting and used the hyperbolic tangent activation function on both layers, which seemed to provide better results. The choice of optimiser was the Stochastic Gradient Descent, which significantly outperformed the Adam Optimiser, while sacrificing some computational efficienct. We found that lower learning rates generalised the networks better when combined with more epochs. Early stopping was used to prevent overfitting. The model results are presented below
 
 **Neural Network Evaluation Results**:
-_Accuracy_: 0.97765945
-_Precision_: 0.27371695
-_Recall_: 0.25323741
-_F1 Score_: 0.26307922
-_AUC-ROC_: 0.90470257
-_Best threshold for F1_: 0.9165825
+- _Accuracy_: 0.97765945
+- _Precision_: 0.27371695
+- _Recall_: 0.25323741
+- _F1 Score_: 0.26307922
+- _AUC-ROC_: 0.90470257
+- _Best threshold for F1_: 0.9165825
 
 **Confusion Matrix for Neural Network Model**: 
 
