@@ -57,7 +57,8 @@ From the data visualisation found in the Graphs section, we make the following o
 
 ![Alt text](Graphs/48.png)
 
-[View Interactive Plot](https://whsnicholas.github.io/VicRoads-Fatalities/accident_date_agg_plotly.html)
+<iframe src="https://whsnicholas.github.io/VicRoads-Fatalities/accident_date_agg_plotly.html" width="800" height="600"></iframe>
+
 
 ## Machine Learning Methods
 
