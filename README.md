@@ -55,7 +55,7 @@ From the data visualisation found in the Graphs section, we make the following o
 - If seatbelt or helmets are not worn, the accident is more likely to be fatal (42)
 - If the driver was ejected, the accident is more likely to be fatal (46)
 
-![Alt text](Graphs/48.png)
+![Alt text](Graphs/48. Fatal Accidents in Victoria (VicGrid94).png)
 
 
 ## Machine Learning Methods
