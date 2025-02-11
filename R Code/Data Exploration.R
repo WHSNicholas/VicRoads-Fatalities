@@ -183,6 +183,8 @@ accident_date_agg = vicroad_df %>%
 accident_date_agg_plotly = ggplotly(accident_date_agg, tooltip = 'text')
 accident_date_agg_plotly
 
+htmlwidgets::saveWidget(accident_date_agg_plotly, "accident_date_agg_plotly.html", selfcontained = FALSE)
+
 accident_date_agg
 
 # 2.2. Time --------------------------------------------------------------------------------------------------
@@ -263,7 +265,7 @@ vicroad_df %>%
   summarize(accident_count = n()) %>%
   ungroup() %>%
   ggplot(aes(x = vehicle_year, y = accident_count)) +
-    geom_line(color = "blue", size = 0.5 ) +
+    geom_line(color = "Midnight Blue", size = 0.5 ) +
     labs(
       x = "Vehicle Year",
       y = "Accident Count",
@@ -335,7 +337,7 @@ vicroad_df %>%
   ) %>%
   mutate(accident_time_15 = as_hms(accident_time_15_sec)) %>%
   ggplot(aes(x = accident_time_15, y = fatal_percentage)) +
-    geom_line(size = 0.5, color = "red") +
+    geom_line(size = 0.5, color = "MidnightBlue") +
     scale_x_time(
       breaks = scales::breaks_width("1 hour"),
       labels = scales::label_time("%H:%M")
@@ -369,7 +371,7 @@ vicroad_df %>%
       labels = scales::label_time("%H:%M")
     ) +
     scale_color_manual(
-      values = c("Weekday" = "blue", "Weekend" = "red")
+      values = c("Weekday" = "MidnightBlue", "Weekend" = "SteelBlue")
     ) +
     labs(
       x      = "Time of Day",
@@ -387,7 +389,7 @@ vicroad_df %>%
   group_by(accident_type) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(accident_type, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Accident Type",
       y     = "Fatal Percentage (%)",
@@ -406,7 +408,7 @@ vicroad_df %>%
   group_by(day) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(day, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Accident Type",
       y     = "Fatal Percentage (%)",
@@ -422,7 +424,7 @@ vicroad_df %>%
   group_by(light_condition) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(light_condition, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Light Condition",
       y     = "Fatal Percentage (%)",
@@ -443,7 +445,7 @@ vicroad_df %>%
   group_by(vehicles_group) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = vehicles_group, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = c("steelblue", "darkorange", "red")) +
+    geom_bar(stat = "identity") +
     labs(
       x = "Number of Vehicles Involved",
       y = "Fatal Accident Percentage (%)",
@@ -507,7 +509,7 @@ vicroad_df %>%
   group_by(road_geometry) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(road_geometry, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Road Geometry",
       y     = "Fatal Percentage (%)",
@@ -523,7 +525,7 @@ vicroad_df %>%
   group_by(speed_zone) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = speed_zone, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Speed Zone",
       y     = "Fatal Percentage (%)",
@@ -542,7 +544,7 @@ vicroad_df %>%
   group_by(rma) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = rma, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "RMA",
       y     = "Fatal Percentage (%)",
@@ -567,7 +569,7 @@ vicroad_df %>%
       y     = "Fatal Percentage (%)",
       title = "Fatal Accidents by Vehicle Year"
     ) +
-    geom_smooth() +
+    geom_smooth(fill = 'MidnightBlue') +
     scale_y_continuous(labels = scales::percent_format(scale = 1)) +
     xlim(1960, 2025) +
     ylim(0, 25)
@@ -585,7 +587,7 @@ vicroad_df %>%
     )
   ) %>%
   ggplot(aes(x = initial_direction, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Initial Direction",
       y     = "Fatal Percentage (%)",
@@ -600,7 +602,7 @@ vicroad_df %>%
   group_by(road_surface) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = road_surface, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Road Surface",
       y     = "Fatal Percentage (%)",
@@ -615,7 +617,7 @@ vicroad_df %>%
   group_by(registration_state) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = registration_state, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Registration State",
       y     = "Fatal Percentage (%)",
@@ -632,7 +634,7 @@ vicroad_df %>%
   group_by(vehicle_type) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = vehicle_type, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Vehicle Type",
       y     = "Fatal Percentage (%)",
@@ -656,7 +658,7 @@ vicroad_df %>%
   group_by(fuel) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = fuel, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Fuel",
       y     = "Fatal Percentage (%)",
@@ -740,7 +742,7 @@ vicroad_df %>%
     )
   ) %>%
   ggplot(aes(x = final_direction, y = fatal_percentage)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_bar(stat = "identity") +
   labs(
     x     = "Final Direction",
     y     = "Fatal Percentage (%)",
@@ -755,7 +757,7 @@ vicroad_df %>%
   group_by(driver_intent) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(driver_intent, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Driver Intent",
       y     = "Fatal Percentage (%)",
@@ -774,7 +776,7 @@ vicroad_df %>%
   group_by(vehicle_movement) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(vehicle_movement, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Vehicle Movement",
       y     = "Fatal Percentage (%)",
@@ -793,7 +795,7 @@ vicroad_df %>%
   group_by(trailer_type) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(trailer_type, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Trailer Type",
       y     = "Fatal Percentage (%)",
@@ -812,7 +814,7 @@ vicroad_df %>%
   group_by(caught_fire) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(caught_fire, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Caught Fire",
       y     = "Fatal Percentage (%)",
@@ -828,7 +830,7 @@ vicroad_df %>%
   group_by(initial_impact) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(initial_impact, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Initial Impact",
       y     = "Fatal Percentage (%)",
@@ -847,7 +849,7 @@ vicroad_df %>%
   group_by(lamps) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(lamps, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Lamps",
       y     = "Fatal Percentage (%)",
@@ -864,7 +866,7 @@ vicroad_df %>%
   group_by(traffic_control) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(traffic_control, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Traffic Control",
       y     = "Fatal Percentage (%)",
@@ -901,7 +903,7 @@ vicroad_df %>%
     fatal_percentage = 100 * fatal_count / total_count,
     .groups = "drop"
   ) %>%
-ggplot(aes(x = event_type, y = fatal_percentage, fill = event_type)) +
+ggplot(aes(x = event_type, y = fatal_percentage)) +
   geom_bar(stat = "identity", show.legend = FALSE) +
   labs(
     title = "Percentage of Fatal Accidents by Event Type",
@@ -929,8 +931,7 @@ vicroad_df %>%
   ) %>%
   ggplot(aes(
     x = reorder(collision_type, -fatal_percentage),
-    y = fatal_percentage,
-    fill = reorder(collision_type, -fatal_percentage)
+    y = fatal_percentage
   )) +
     geom_bar(stat = "identity", show.legend = FALSE) +
     labs(
@@ -975,7 +976,7 @@ vicroad_df %>%
   group_by(sex) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(sex, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Sex",
       y     = "Fatal Percentage (%)",
@@ -991,7 +992,7 @@ vicroad_df %>%
   group_by(age_group) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(age_group, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Age Group",
       y     = "Fatal Percentage (%)",
@@ -1007,7 +1008,7 @@ vicroad_df %>%
   group_by(helmet_belt_worn) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(helmet_belt_worn, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Helmet Belt Worn",
       y     = "Fatal Percentage (%)",
@@ -1024,7 +1025,7 @@ vicroad_df %>%
   group_by(road_user) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(road_user, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Road User",
       y     = "Fatal Percentage (%)",
@@ -1047,7 +1048,7 @@ vicroad_df %>%
   group_by(license_state) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = license_state, y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "License State",
       y     = "Fatal Percentage (%)",
@@ -1065,7 +1066,7 @@ vicroad_df %>%
   group_by(taken_hospital) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(taken_hospital, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Taken Hospital",
       y     = "Fatal Percentage (%)",
@@ -1081,7 +1082,7 @@ vicroad_df %>%
   group_by(ejected) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(ejected, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Ejected",
       y     = "Fatal Percentage (%)",
@@ -1097,7 +1098,7 @@ vicroad_df %>%
   group_by(node_type) %>%
   summarise(fatal_percentage = mean(fatal, na.rm = TRUE) * 100) %>%
   ggplot(aes(x = reorder(node_type, -fatal_percentage), y = fatal_percentage)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_bar(stat = "identity") +
     labs(
       x     = "Node Type",
       y     = "Fatal Percentage (%)",
@@ -1163,7 +1164,7 @@ vicroad_df %>%
     fatal_percentage = 100 * fatal_count / total_count,
     .groups = "drop"
   ) %>%
-ggplot(aes(x = surface_cond, y = fatal_percentage, fill = surface_cond)) +
+ggplot(aes(x = surface_cond, y = fatal_percentage) +
   geom_bar(stat = "identity", show.legend = FALSE) +
   labs(
     title = "Percentage of Fatal Accidents by Surface Condition",
