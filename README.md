@@ -31,6 +31,8 @@ The next major issue was the handling of missing and NA values in the dataset. S
 ### Key Insights
 The general methodology for gathering insights required that we realise we could not infer the distribution of certain variables by their availability in our dataset because we could not know whether the data was a complete record of all accidents that occured within this time frame, as there may have been missing records, or unavailable data not included in the data. For example, we would hesitate to claim that because there was 40% females in the data available, that therefore males are more likely to be involved in accidents. Instead, we aimed to understand whether males or females were more likely to be involved in fatal accidents - that is, for example, __% of men who had been involved in an accident were involved in a fatal accident, whereas that number was __% for females. 
 
+![Alt text](Graphs/48.png)
+
 From the data visualisation found in the Graphs section, we make the following observations with the numbers (1) giving reference to the graphs
 - There was a seasonal trend in 2020-2022 which corresponded to a drop in accidents during lockdown periods (2)
 - The Dec-Jan period has less accidents than the rest of the year (3)
@@ -55,9 +57,9 @@ From the data visualisation found in the Graphs section, we make the following o
 - If seatbelt or helmets are not worn, the accident is more likely to be fatal (42)
 - If the driver was ejected, the accident is more likely to be fatal (46)
 
-![Alt text](Graphs/48.png)
 
-<iframe src="https://whsnicholas.github.io/VicRoads-Fatalities/accident_date_agg_plotly.html" width="800" height="600"></iframe>
+
+[View the interactive Plotly graph](https://whsnicholas.github.io/VicRoads-Fatalities/accident_date_agg_plotly.html)
 
 
 ## Machine Learning Methods
